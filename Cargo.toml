@@ -8,3 +8,6 @@ edition = "2018"
 [dependencies]
 solana-program = "1.7.12"
 borsh = "0.9.1"
+
+[lib]
+crate-type = ["cdylib", "lib"]
