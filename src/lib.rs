@@ -1,3 +1,6 @@
+mod nft;
+mod action;
+
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -8,13 +11,6 @@ use solana_program::{
     pubkey::Pubkey,
 };
 
-/// Define the type of state stored in accounts
-#[derive(BorshSerialize, BorshDeserialize, Debug)]
-pub struct GreetingAccount {
-    /// number of greetings
-    pub counter: u32,
-}
-
 // Declare and export the program's entrypoint
 entrypoint!(process_instruction);
 
@@ -22,11 +18,21 @@ entrypoint!(process_instruction);
 pub fn process_instruction(
     program_id: &Pubkey, // Public key of the account the hello world program was loaded into
     accounts: &[AccountInfo], // The account to say hello to
-    _instruction_data: &[u8], // Ignored, all helloworld instructions are hellos
+    instruction_data: &[u8], 
 ) -> ProgramResult {
-    msg!("Hello World Rust program entrypoint");
+    msg!("GENERATUS GREETS YOU.");
+    msg!("GENERATUS IS READING YOUR INSTRUCTIONS.");
 
-    // Iterating accounts is safer then indexing
+    let action = action::GeneratusAction::try_from_slice(instruction_data)?;
+    match action {
+      action::GeneratusAction::CreateProject { name, description, website} => {
+        msg!("GENERATUS READ CREATE PROJECT: name = {}, description = {:?}, website = {:?}", name, description, website);
+        
+      },
+      _ => msg!("GENERATUS IS CONFUSED.")
+    }
+
+    /*    // Iterating accounts is safer then indexing
     let accounts_iter = &mut accounts.iter();
 
     // Get the account to say hello to
@@ -43,8 +49,7 @@ pub fn process_instruction(
     greeting_account.counter += 1;
     greeting_account.serialize(&mut &mut account.data.borrow_mut()[..])?;
 
-    msg!("Greeted {} time(s)!", greeting_account.counter);
-
+*/
     Ok(())
 }
 
@@ -72,29 +77,11 @@ mod test {
             false,
             Epoch::default(),
         );
-        let instruction_data: Vec<u8> = Vec::new();
 
+
+        let mut instruction_data: Vec<u8> = Vec::new();
+        action::GeneratusAction::CreateProject { name: "test".to_string(), description: None, website: None }.serialize(&mut instruction_data).unwrap();
         let accounts = vec![account];
-
-        assert_eq!(
-            GreetingAccount::try_from_slice(&accounts[0].data.borrow())
-                .unwrap()
-                .counter,
-            0
-        );
         process_instruction(&program_id, &accounts, &instruction_data).unwrap();
-        assert_eq!(
-            GreetingAccount::try_from_slice(&accounts[0].data.borrow())
-                .unwrap()
-                .counter,
-            1
-        );
-        process_instruction(&program_id, &accounts, &instruction_data).unwrap();
-        assert_eq!(
-            GreetingAccount::try_from_slice(&accounts[0].data.borrow())
-                .unwrap()
-                .counter,
-            2
-        );
     }
 }
